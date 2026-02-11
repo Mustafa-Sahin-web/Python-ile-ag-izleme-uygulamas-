@@ -173,7 +173,14 @@ class NetworkScanner:
                        if keyword.lower() in r['hostname'].lower()]
         
         if port:
-            filtered = [r for r in filtered 
-                       if str(port) in r['open_ports']]
+            # Parse ports properly to avoid false positives (e.g., 80 matching 8080)
+            filtered = []
+            for r in self.results:
+                ports_str = r['open_ports']
+                if ports_str and ports_str != 'Port bulunamadı':
+                    # Split by comma and check each port
+                    ports = [p.strip() for p in ports_str.split(',')]
+                    if str(port) in ports:
+                        filtered.append(r)
         
         return filtered

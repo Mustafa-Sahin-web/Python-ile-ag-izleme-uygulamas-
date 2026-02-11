@@ -4,6 +4,8 @@ Test script for network monitoring application
 Ağ izleme uygulaması için test scripti
 """
 import sys
+import tempfile
+import os
 from network_scanner import NetworkScanner
 from excel_exporter import ExcelExporter
 
@@ -60,7 +62,7 @@ def test_excel_exporter(scanner):
     # Excel'e aktar
     print("\nTest: Excel dosyası oluşturma...")
     exporter = ExcelExporter()
-    filename = "/tmp/test_results.xlsx"
+    filename = os.path.join(tempfile.gettempdir(), "test_results.xlsx")
     success = exporter.export(test_data, filename, "127.0.0.1/32")
     
     if success:
@@ -84,6 +86,7 @@ def test_filtering():
         {'ip': '192.168.1.1', 'hostname': 'router', 'status': 'Aktif', 'open_ports': '80, 443'},
         {'ip': '192.168.1.2', 'hostname': 'server', 'status': 'Aktif', 'open_ports': '22, 80'},
         {'ip': '192.168.1.3', 'hostname': 'workstation', 'status': 'Aktif', 'open_ports': '445'},
+        {'ip': '192.168.1.4', 'hostname': 'proxy', 'status': 'Aktif', 'open_ports': '8080'},
     ]
     
     # Hostname filtreleme
@@ -95,11 +98,25 @@ def test_filtering():
     else:
         print("  ✗ BAŞARISIZ")
     
-    # Port filtreleme
-    print("\nTest 2: Port filtreleme (port=80)...")
+    # Port filtreleme - port 80 (should not match 8080)
+    print("\nTest 2: Port filtreleme (port=80, 8080 ile karışmamalı)...")
     filtered = scanner.filter_results(port=80)
     print(f"  Bulunan: {len(filtered)} sonuç")
+    # Should find 2 results (router and server), NOT proxy with 8080
     if len(filtered) == 2:
+        has_8080 = any('8080' in r['open_ports'] for r in filtered)
+        if not has_8080:
+            print("  ✓ BAŞARILI - 8080 ile karışmadı")
+        else:
+            print("  ✗ BAŞARISIZ - 8080 ile karıştı")
+    else:
+        print("  ✗ BAŞARISIZ")
+    
+    # Port filtreleme - port 8080
+    print("\nTest 3: Port filtreleme (port=8080)...")
+    filtered = scanner.filter_results(port=8080)
+    print(f"  Bulunan: {len(filtered)} sonuç")
+    if len(filtered) == 1 and '8080' in filtered[0]['open_ports']:
         print("  ✓ BAŞARILI")
     else:
         print("  ✗ BAŞARISIZ")
