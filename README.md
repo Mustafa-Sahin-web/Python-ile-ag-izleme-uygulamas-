@@ -1,1 +1,1 @@
-# Python-ile-ag-izleme-uygulamas-
+# Python-ile-ag-izleme-uygulamasi
